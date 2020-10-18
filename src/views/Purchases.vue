@@ -6,7 +6,7 @@
                 <h5>Number of Items: <span>{{item.totalItems}}</span></h5>
                 <h6>Total Price: <span>{{item.totalPrice}}</span></h6> 
 
-                <h6>Payment Status: <span v-if="item.confirmed">Payment confirmed awaiting pickup</span><span v-if="!item.confirmed">Payment not confirmed(<a class="a" v-on:click="purchaseRequest(item.phoneNumber,item.totalPrice)" >Click Here</a> to get a payment request from {{item.phoneNumber}})</span></h6>
+                <h6>Payment Status: <span v-if="item.confirmed">Payment confirmed awaiting pickup</span><span v-if="!item.confirmed">Payment not confirmed(<a class="a" v-on:click="purchaseRequest(item.phoneNumber,item.totalPrice)" >Click Here</a> to get a payment request to {{item.phoneNumber}})</span></h6>
 
                 <button class="btn btn-dark" :id="'showHide' + index" v-on:click="showHideItems(index)">Hide Items</button>
 
@@ -15,7 +15,7 @@
                 <hr>
                 
                 <div style="display:block;" :id="'awaitingPurchases' + index" >
-                    <div :key="awaitingItem" v-for="awaitingItem in item.items" class="row no-gutters m-3" style="border-bottom:1px solid black">
+                    <div :key="awaitingItem" v-for="(awaitingItem,subindex) in item.items" class="row no-gutters m-3" style="border-bottom:1px solid black">
                         
                             
                             <div class="col-4">
@@ -27,9 +27,19 @@
 
                                 <div class="card-body"> 
                                     <h5 class="card-title">{{awaitingItem.name}}</h5>
-                                    <p class="card-text">Price: <span>{{awaitingItem.price}}</span></p>
-                                    <p class="card-text">No of items: <span>{{awaitingItem.selectedQuantity}}</span></p>
-                                    <p>Item Grand Total: <span>{{awaitingItem.accumilativePrice}}</span></p>
+                                    <h6>Item Grand Total: <span>{{awaitingItem.accumilativePrice}}</span></h6>
+
+                                    <p>Items selected: <button class="btn btn-dark btn-sm" :id='"typeTriggerBtn" + index + subindex' v-on:click="typeTrigger(index,subindex)">Show</button> </p>
+                                    
+                                    <div :id='"typeTriggerView" + index + subindex' style="display:none">
+                                        <div :key="type" v-for="(type,subsubindex) in awaitingItem.types" class="border border-secondary rounded d-block mx-auto p-3 m-2">
+                                            <p class="text-center">{{subsubindex + 1}}</p>
+                                            <p>{{type.name}}</p>
+                                            <p>Unit price: {{type.price}}</p>
+                                            <p>Quantity: {{type.selected}}</p>
+                                            <p>Item Total: {{type.totalPrice}}</p>
+                                        </div>
+                                    </div>
                                 </div>
 
 
@@ -61,8 +71,11 @@ export default {
     methods:{
 
         loadPage:function(){
+
             var items = this.items
             var userId = firebase.auth().currentUser.uid
+
+            
 
             firebase.firestore().collection("Users").doc(userId.toString()).get().then(function(doc) {
                 var awaitingPurchases = doc.data().awaitingPurchases
@@ -108,9 +121,9 @@ export default {
                 "Timestamp": date,
                 "TransactionType": "CustomerPayBillOnline",
                 "Amount": amount,
-                "PartyA": phoneNumber,
+                "PartyA": "254" + phoneNumber,
                 "PartyB": "174379",
-                "PhoneNumber": phoneNumber,
+                "PhoneNumber": "254" + phoneNumber,
                 "CallBackURL": "http://192.168.2.43:8080",
                 "AccountReference": "test",
                 "TransactionDesc": "test"
@@ -119,13 +132,27 @@ export default {
                 alert("Request Sent")
             })
         
+        },
+        typeTrigger:function(index,subindex){
+            var triggerBtn = document.getElementById("typeTriggerBtn" + index + subindex)
+            var triggerView = document.getElementById("typeTriggerView" + index + subindex)
+
+            if(triggerView.style.display == "none"){
+                triggerView.style.display = "block"
+                triggerBtn.innerHTML = "Hide"
+            }
+            else{
+                triggerView.style.display = "none"
+                triggerBtn.innerHTML = "Show"
+            }
         }
 
 
     },
     mounted:function(){
-        this.items = []
         this.loadPage()
+    },
+    created: function () {
     }
 
 }

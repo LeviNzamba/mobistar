@@ -3,16 +3,23 @@
   <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
     <div class="container">
-      <a class="navbar-brand" href="#">Mobistar Hardware</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      <a class="navbar-brand" href="#" style="width:60%">Mobistar Hardware</a>
+      
+      <router-link to="/Cart" class="navbar-brand cartLogo" href="#">
+        <img src="./assets/Images/Icons/cart.png" width="30" height="30" alt="ddd">
+        <span class="badge badge-light" style="font-size:10px;" id="cartItemsQuantityLogo"></span>
+      </router-link>
+
+      <button class="navbar-toggler" style="width:15%" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
+        
+        <ul id="nav" class="navbar-nav ml-auto">
           
           <li class="nav-item">
             <router-link to="/" class="nav-link">Home</router-link>
-          
+          </li>
           <li class="nav-item">
             <router-link to="/Shop" class="nav-link">Shop</router-link>
           </li>
@@ -22,17 +29,25 @@
           <li class="nav-item" id="login">
             <a class="nav-link" data-toggle="modal" data-target="#loginModal">Login</a>
           </li>
-          <li class="nav-item" id="account">
+          <li class="nav-item " id="account">
               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Account
               </a>
-            <div class="accountDrop dropdown-menu bg-dark text-white text-center p-3 border-rounded" style="" aria-labelledby="navbarDropdown">
-              <p id="userEmail" class="text-white"></p>
-              <button class="text-dark btn bg-white p-2" v-on:click="signout">Sign Out</button>
+            <div class="accountDrop bg-white dropdown-menu bg-dark text-dark text-center p-3 border-rounded" style="" aria-labelledby="navbarDropdown">
+              <h6 id="userEmail" class=""></h6>
+              <hr>
+              <router-link to="/Purchases"><a class="text-dark border border-secondary p-2 border-rounded m-3">Purchases</a></router-link>
+              <br>
+              <br>
+              <a class="text-dark border border-secondary p-2 border-rounded" v-on:click="signout">Sign Out</a>
             </div>
           </li>
         </ul>
-      </div>
+
+
+      </div> 
+
+    
     </div>
   </nav>
 
@@ -86,7 +101,6 @@
     </div>
 
   </div>   
-
   <router-view/>
   </div>
 </template>
@@ -104,6 +118,10 @@ export default {
     }
   },
   methods:{
+    setquantity:function(){
+      var carItemsQuantityLogo = document.getElementById("cartItemsQuantityLogo")
+      carItemsQuantity.innerHTML = "gg"
+    },
     login:function(){
       var email =  this.email
       var password =  this.password
@@ -149,11 +167,13 @@ export default {
       var userId = firebase.auth().currentUser.uid
       var store = this.$store
       var carItemsQuantity = document.getElementById("cartItemsQuantity")
+      var carItemsQuantityLogo = document.getElementById("cartItemsQuantityLogo")
 
       firebase.firestore().collection("Users").doc(userId.toString()).get().then(function(doc){
           
         store.state.cartItemsNumber = doc.data().totalItems
         carItemsQuantity.innerHTML = store.state.cartItemsNumber
+        carItemsQuantityLogo.innerHTML = store.state.cartItemsNumber
 
       })
       
@@ -165,8 +185,11 @@ export default {
       var accountNav = document.getElementById("account")
       var account = document.getElementById("userEmail")
       var carItemsQuantity = document.getElementById("cartItemsQuantity")
+      var carItemsQuantityLogo = document.getElementById("cartItemsQuantityLogo")
       var getCartItemsQuantity = this.getCartItemsQuantity
+      var nav =  document.getElementById("nav")
 
+      nav.style.display = 'none'
 
       firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
@@ -180,10 +203,15 @@ export default {
           loginNav.style.display = 'block'
           accountNav.style.display = 'none'
           carItemsQuantity.innerHTML = ""
+          carItemsQuantityLogo.innerHTML = ""
         }
 
+        nav.style.display = 'flex'
+
       });
-    
+
+
+
 
 
     }
@@ -211,6 +239,9 @@ export default {
   .accountDrop{
     margin-left:80%;
   }
+  .cartLogo{
+    display: none;
+  }
   
   @media screen and (max-width:500px){
     
@@ -219,4 +250,14 @@ export default {
     }
 
   }
+  
+  
+  @media screen and (max-width:780px){
+
+    .cartLogo{
+      display: block;
+    }
+
+  }
+  
 </style>

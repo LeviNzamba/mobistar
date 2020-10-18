@@ -7,12 +7,22 @@
     
         <div class="m-2" id="itemsColumn">
 
-          <div :key="item" v-for="(item,index) in items" class = "border border-secondary rounded d-block mx-auto p-3 m-2">
+          <div :key="item" v-for="(item,index) in items" class="border border-secondary rounded d-block mx-auto p-3 m-2">
 
-            <p>{{index + 1}}</p>
+            <h5>{{index + 1}}</h5>
             <h6>{{item.name}}</h6>
-            <p>Unit Price: {{item.price}}</p>
-            <p>Quantity: {{item.selectedQuantity}}</p>
+            <p>Items requested: </p>
+            
+            <div class="ml-3">
+              <div :key="type" v-for="(type,subindex) in item.types" class="border border-secondary rounded d-block mx-auto p-3 m-2">
+                <h6>{{subindex + 1}}</h6>
+                <p>{{type.name}}</p>
+                <p>Unit price: {{type.price}}</p>
+                <p>Quantity: {{type.selected}}</p>
+                <p>Item Total: {{type.totalPrice}}</p>
+              </div>
+            </div>
+
             <p>Grand Total: {{item.accumilativePrice}}</p>
             
 
@@ -29,7 +39,12 @@
           <div class="row" style="width:100%">
             <div class="col-12">
               <label for="phoneNumber" class="mr-1">Phone Number:</label>
-              <input id="phoneNumber" type="text" placeholder="" style="width:50%" v-model="phoneNumber">
+              <div class="input-group m-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">+254</div>
+                </div>
+              <input id="phoneNumber" type="text" placeholder="" class="form-control"  v-model="phoneNumber">
+              </div>
             </div>
           </div>
           
@@ -72,29 +87,28 @@ export default {
       var itemsColumn = document.getElementById("itemsColumn")
       itemsColumn.style.display = 'none'
 
+     
+
 
 
       firebase.firestore().collection("Users").doc(userId.toString()).get().then(function(doc) {
-    
+        
         var totalPriceFromFirebase = doc.data().totalPrice
         totalPriceTextBox.innerHTML = totalPriceFromFirebase
         totalPrice.push(totalPriceFromFirebase)
-       
-
+      
         
         for (let i = 0; i < doc.data().cartItems.length + 1; i++) {
 
             var image = doc.data().cartItems[i].image
-            var price = doc.data().cartItems[i].price
             var name = doc.data().cartItems[i].name
             var id = doc.data().cartItems[i].id
-            var quantity = doc.data().cartItems[i].quantity
-            var selectedQuantity = doc.data().cartItems[i].selectedQuantity
             var accumilativePrice = doc.data().cartItems[i].accumilativePrice
+            var types = doc.data().cartItems[i].types
 
         
-            items.push({name:name,image:image,price:price,quantity:quantity,selectedQuantity:selectedQuantity,accumilativePrice:accumilativePrice})
-           
+            items.push({name:name,image:image,accumilativePrice:accumilativePrice,types:types})
+            console.log(types) 
         }
        
       })
@@ -148,7 +162,7 @@ export default {
             "Amount": totalPrice,
             "PartyA": phoneNumber,
             "PartyB": "174379",
-            "PhoneNumber": phoneNumber,
+            "PhoneNumber": "254" + phoneNumber,
             "CallBackURL": "http://192.168.2.43:8080",
             "AccountReference": "test",
             "TransactionDesc": "test"
@@ -156,6 +170,11 @@ export default {
         mpesa.STKPushSimulation(request_options,function(data){
           confirmPurchaseInitiate()
         })
+        .catch(function(error) {
+          var error = error
+          alert(error)
+        });
+
 
     },
     confirmPurchaseInitiate:function(){
@@ -171,6 +190,7 @@ export default {
       var totalPrice = this.totalPrice[0]
       var cartItemsNumber = this.$store.state.cartItemsNumber
       var carItemsQuantity = document.getElementById("cartItemsQuantity")
+      var carItemsQuantityLogo = document.getElementById("cartItemsQuantityLogo")
       var phoneNumber = this.phoneNumber
 
       firebase.firestore().collection("Users").doc(userId.toString()).get().then(function(doc){
@@ -179,7 +199,7 @@ export default {
         var awaitingPurchases = []
         var totalItems = doc.data().totalItems
 
-
+        
 
         awaitingPurchases = doc.data().awaitingPurchases
         awaitingPurchases.push({
@@ -191,19 +211,21 @@ export default {
         })
       
         carItemsQuantity.innerHTML = "0"
+        carItemsQuantityLogo.innerHTML = "0"
 
-        
         firebase.firestore().collection("Users").doc(userId.toString()).update({
           //Clear the cart
           totalItems:"0",
           cartItems:[],
           items:[],
           totalPrice:"0",
-          //Setting awiting purchases
           awaitingPurchases:awaitingPurchases
 
 
+
         })
+        
+        
       
         
        
@@ -215,6 +237,7 @@ export default {
   },
   mounted:function(){
     
+    this.items = []
     this.checkoutInitialisePage()
     
 

@@ -9,29 +9,88 @@
       </div>
       
     </div>
-      <div class="jumbotron bg-white" id="mainSection">
-        <div class="row justify-content-center">
-          
-          <div v-for="(item,index) in items" :key="item" class="col-sm-3 col-6 mt-2 mb-2">
-            <div class="card mx-auto" style="max-width:20rem;">
-              <img class="card-img-top" v-bind:src="item.image" alt="Card image cap">
-              <div class="card-body">
-                <p>{{item.name}}</p>
-                <p class="font-weight-bold"><span>Ksh.</span>{{item.price}}</p>
-                
-             
-                
-                <button class="btn btn-dark font-weight-bold" style="width:100%" v-bind:id="'addtocart' + index" v-on:click="addtocart(item.image,item.name,item.price,item.quantity,item.id,index)">Add to Cart</button>
-                
 
+    <div id="mainSection">
+        <div class="container">
+          <div class="row">
+
+            <div class="col-8">
+              <input class="form-control float-left" type="search" v-model="search" placeholder="Search" aria-label="Search" style="width:75%">
+              <img src="../assets/Images/Icons/search.png" alt="" width="20" class="m-2" v-on:click="searchShop">
+
+            </div>
+            <!--
+            <div class="col-4">
+              <img src="../assets/Images/Icons/sort.png" alt="" width="30" class="m-2 float-right" data-toggle="modal" data-target="#staticBackdrop" >
+              <img src="../assets/Images/Icons/filter.png" alt="" width="30" class="m-2 float-right">
+            </div>
+            -->
+
+          </div>
+        </div>
+
+        <div class="jumbotron bg-white">
+          <div class="row justify-content-center">
+            
+            <div v-for="(item,index) in items" :key="item" class="col-sm-3 col-6 mt-2 mb-2">
+              <div class="card mx-auto" style="max-width:20rem;">
+                <img class="card-img-top" v-bind:src="item.image" alt="Card image cap">
+                <div class="card-body">
+                  <p>{{item.name}}</p>
+                  <p class="badge badge-light p-1 m-2">{{item.category}}</p>
+                  <p>Available In: <button class="btn btn-dark btn-sm" :id="'availableTriggerBtn' +  index" v-on:click="availableTrigger(index)">Show</button></p>
+                  
+                  <div :id="'availableTrigger' +  index" style="display:none">
+                    <hr>
+                    <div :key="type" v-for="type in item.types">
+                      <p>{{type.name}}</p>
+                      <p>Ksh. {{type.price}}</p>
+                      <p>{{type.quantity}}({{item.measurement}}) remaining</p>
+                      <hr>
+                    </div>
+                  </div>
+                  
+                  <button class="btn btn-dark font-weight-bold" style="width:100%" v-bind:id="'addtocart' + index" v-on:click="addtocart(item.image,item.name,item.id,index,item.category,item.measurement,item.types)">Add to Cart</button>
+                  
+
+                </div>
               </div>
             </div>
+            
+            <p>{{item}}</p>
+            
           </div>
-          
-          <p>{{item}}</p>
-          
         </div>
+    </div>
+    <!--  MODALS  -->
+
+    <!--Filter Modal-->
+    <div class="modal fade" id="staticBackdrop" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+      
+      <div class="modal-dialog modalCenter">
+       
+        <div class="modal-content">
+
+          <div class="modal-header">
+            <h5 class="modal-title" id="staticBackdropLabel">Sort</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <button class="btn btn-outline-dark m-3" style="width:100%;">Sort by Name</button>
+            <button class="btn btn-outline-dark" style="width:100%;">Sort by Price</button>
+          </div>
+
+
+        </div>
+
       </div>
+
+    </div>
+    <!--Sort Modal-->
+    
+  
   </div>
 </template>
 
@@ -47,7 +106,8 @@ export default{
       items:[],
       names:[],
       itemNames:[],
-      loading:false
+      loading:false,
+      search:''
     }
   },
   methods:{
@@ -55,15 +115,17 @@ export default{
     getCartItemsQuantity:function(){
       var userId = firebase.auth().currentUser.uid
       var carItemsQuantity = document.getElementById("cartItemsQuantity")
+      var carItemsQuantityLogo = document.getElementById("cartItemsQuantityLogo")
 
       firebase.firestore().collection("Users").doc(userId.toString()).get().then(function(doc){
           
         carItemsQuantity.innerHTML = doc.data().totalItems.toString()
+        carItemsQuantityLogo.innerHTML = doc.data().totalItems.toString()
 
       })
 
     },
-    addtocart:function(image,name,price,quantity,id,index){
+    addtocart:function(image,name,id,index,category,measurement,types){
       var userId = firebase.auth().currentUser.uid
       var adddbtn = document.getElementById('addtocart' + index)
       var getCartItemsQuantity = this.getCartItemsQuantity
@@ -116,7 +178,7 @@ export default{
                   }else{
 
 
-                    cartItems.push({image,name,price,id,quantity})
+                    cartItems.push({image,name,id,category,measurement,types})
                     totalItems++
                     items.push(name)
 
@@ -127,9 +189,6 @@ export default{
 
                     })
                     .then(function() {
-                      firebase.firestore().collection('Users').doc(userId.toString()).set({
-                        awaitingPurchases:[]
-                      })
                       adddbtn.innerHTML = 'Remove from cart'
                       getCartItemsQuantity()
                       
@@ -145,15 +204,17 @@ export default{
                     alert("No such document!");
                 }
             }).catch(function(error) {
-              alert("Error getting document:", error);
+              console.log("Error getting document: ", error);
             });
 
             
         }
         else{
-          
+
+            var item = [{name:name,image:image,category:category,measurement:measurement,types:types}]
+            console.log(item)
             firebase.firestore().collection('Users').doc(userId.toString()).set({
-              cartItems:[{name:name,image:image,price:price,quantity:quantity}],
+              cartItems:item,
               totalItems:1,
               items:[name],
               totalPrice:"0",
@@ -167,7 +228,7 @@ export default{
                 getCartItemsQuantity()
             })
             .catch(function(error) {
-                alert("Error writing document: ", error);
+                alert("Error writing document:", error);
             })
         }
          
@@ -222,7 +283,59 @@ export default{
           promtLoginScreen.style.display = 'block'
         }
       });
+    },
+    availableTrigger:function(index){
+      var triggerView = document.getElementById("availableTrigger" + index)
+      var triggerBtn = document.getElementById("availableTriggerBtn" +  index)
+
+      if(triggerView.style.display == "none"){
+        triggerView.style.display = "block"
+        triggerBtn.innerHTML = "Hide"
+      }
+      else{
+        triggerView.style.display = "none"
+        triggerBtn.innerHTML = "Show"
+      }
+    },
+    searchShop:function(){
+      var search = this.search
+      var page = this
+      var itemsCheck = this.items
+      this.items = [] 
+
+      firebase.firestore().collection("Hardware").get().then(function(querySnapshot) {
+            querySnapshot.forEach(function(doc) {
+              var nameUn = doc.data().name
+              var name = nameUn.toLowerCase()
+              if(name.includes(search.toLowerCase())){
+                page.items.push(doc.data())
+                page.names.push(doc.data().name)
+                console.log(doc.data())
+              }
+            });
+        })
+        .catch(function(error) {
+            console.log("Error getting documents: ", error);
+        });
+
+        var userId = firebase.auth().currentUser.uid
+        var itemNames  = this.itemNames
+        var names = this.names
+
+        firebase.firestore().collection("Users").doc(userId.toString()).get().then(function(doc){
+          itemNames = doc.data().items
+          var name = doc.data().name
+         
+          for (let i = 0; i < itemNames.length; i++) {
+            if(name == search){
+            var index = names.indexOf(itemNames[i]) 
+            var adddbtn = document.getElementById('addtocart' + index)
+            adddbtn.innerHTML = "Remove from Cart"
+            }
+          }
+        })
     }
+
   },
   mounted:function(){
  
@@ -234,3 +347,6 @@ export default{
   
 }
 </script>
+
+<style>
+</style>

@@ -16,7 +16,8 @@
             </div>
 
             <div class="input-group">
-              <p class="btn btn-md btn-rounded btn-block form-control submit" v-on:click="signup()"><i class="fas fa-sign-in-alt"></i> Sign up</p>
+              <p v-if="!loading" class="btn btn-md btn-rounded btn-block form-control submit" v-on:click="signup()" id="signUpBtn">Sign up</p>
+              <p v-if="loading" class="btn btn-md btn-rounded btn-block form-control submit" v-on:click="signup()" id="signUpBtn">Sig up</p>
             </div>
             
         </form>
@@ -36,7 +37,8 @@ export default {
     data(){
         return{
             email:'',
-            password:''
+            password:'',
+            loading:false
         }
     },
     methods:{
@@ -46,16 +48,31 @@ export default {
             var email = page.email
             var password = page.password
             var router = this.$router
-
-            firebase.auth().createUserWithEmailAndPassword(email, password).then(function(){
+            var loading = this.loading
+            loading = true
                 
-                firebase.auth().signInWithEmailAndPassword(email, password).then(function(){
-
-                    router.push('/' + firebase.auth().currentUser.displayName)
-
-                    
-                }).catch(function(error) {
             
+                firebase.auth().createUserWithEmailAndPassword(email, password).then(function(){
+                    firebase.auth().signInWithEmailAndPassword(email, password).then(function(){
+
+                            
+                        router.push('/Shop')
+
+               
+                        
+                    }).catch(function(error) {
+                
+                        var errorCode = error.code;
+                        var errorMessage = error.message;
+
+                        alert(errorMessage)
+                    
+                    })
+
+
+                })
+                .catch(function(error) {
+                
                     var errorCode = error.code;
                     var errorMessage = error.message;
 
@@ -63,17 +80,9 @@ export default {
                 
                 })
 
-
-            }).catch(function(error) {
             
-                var errorCode = error.code;
-                var errorMessage = error.message;
-
-                alert(errorMessage)
+        }
             
-            })
-
-            }
         }
 
     }
@@ -83,7 +92,7 @@ export default {
 <style>
  
 .signup{
-    background-image: url('../assets//Images/signupback.jpg');
+    background-image: url('../assets/Images/signupback.jpg');
    height:70vh;
    
 }
